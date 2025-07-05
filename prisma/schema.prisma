@@ -1,0 +1,144 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum Role {
+    platform_collaborator
+    platform_owner
+    platform_guest
+}
+
+enum InviteStatus {
+    pending
+    accepted
+}
+
+enum ContextType {
+    Event
+    EventMedia
+    EventInvitation
+    EventUsers
+    Account
+    GlobalAdmin
+}
+
+enum PermissionType {
+    Own
+    Write
+    Read
+    Delete
+    Execute
+}
+
+model Account {
+    id        String  @id @default(uuid())
+    email     String
+    emailHash String  @unique
+    password  String
+    active    Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    events             Events[]
+    eventUsers         EventUsers[]
+    accountPermissions AccountPermission[]
+
+    roleId      String?
+    accountRole AccountRole? @relation(fields: [roleId], references: [id])
+}
+
+model Events {
+    id               String   @id @default(uuid())
+    eventName        String
+    eventDescription String?
+    active           Boolean  @default(true)
+    expiresIn        DateTime
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    ownerId String
+    account Account @relation(fields: [ownerId], references: [id])
+
+    eventUsers   EventUsers[]
+    eventMidia   EventMidia[]
+    eventInvites EventInvitation[]
+}
+
+model EventUsers {
+    id        String   @id @default(uuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    eventId String
+    event   Events @relation(fields: [eventId], references: [id])
+
+    accountId String
+    account   Account @relation(fields: [accountId], references: [id])
+
+    @@unique([eventId, accountId])
+}
+
+model EventMidia {
+    id            String @id @default(uuid())
+    filename      String
+    thumnbnailUrl String
+    originalUrl   String
+    eventId       String
+    event         Events @relation(fields: [eventId], references: [id])
+}
+
+model EventInvitation {
+    id           String       @id @default(uuid())
+    eventName    String
+    email        String
+    emailHash    String
+    expiresIn    DateTime
+    inviteStatus InviteStatus
+
+    eventId String
+    event   Events @relation(fields: [eventId], references: [id])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+}
+
+model AccountPermission {
+    id         String         @id @default(uuid())
+    accountId  String
+    account    Account        @relation(fields: [accountId], references: [id])
+    context    ContextType
+    permission PermissionType
+    createAt   DateTime       @default(now())
+
+    @@unique([accountId, context, permission])
+}
+
+model AccountRole {
+    id          String            @id @default(uuid())
+    name        Role              @unique
+    permissions RolePermissions[]
+    accounts    Account[]
+    createAt    DateTime          @default(now())
+    updateAt    DateTime          @default(now())
+}
+
+model RolePermissions {
+    id         String         @id @default(uuid())
+    context    ContextType
+    permission PermissionType
+
+    accountRoleId String
+    role          AccountRole @relation(fields: [accountRoleId], references: [id])
+
+    createAt  DateTime @default(now())
+    updatedAr DateTime @default(now())
+
+    @@unique([accountRoleId, context, permission])
+}

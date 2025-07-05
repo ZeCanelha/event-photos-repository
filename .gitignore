@@ -1,0 +1,7 @@
+node_modules
+.DS_Store
+*.env
+db_data
+
+prisma/*.json
+prisma/*.ts

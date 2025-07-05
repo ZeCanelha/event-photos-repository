@@ -1,0 +1,20 @@
+{
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  },
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "es2020" /* Specify what module code is generated. */,
+    "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
+    "rootDir": "./",
+    /* Type Checking */
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "baseUrl": "src/",
+    "paths": {
+      "@routes/*": ["routes/*"]
+    }
+  }
+}

@@ -2,7 +2,7 @@ import jwt, { Secret, sign } from "jsonwebtoken";
 import dotenv from "dotenv";
 import { Account, PrismaClient, Role } from "@prisma/client";
 import { Response, NextFunction, Request } from "express";
-import { IGetUserAuthInfoRequest, JWTClains } from "types/auth";
+import { IGetUserAuthInfoRequest, JWTClaims } from "types/auth";
 
 dotenv.config();
 
@@ -35,7 +35,7 @@ export const validateJWT = (
       return;
     }
 
-    req.user = decoded as JWTClains;
+    req.user = decoded as JWTClaims;
     next();
   });
 };

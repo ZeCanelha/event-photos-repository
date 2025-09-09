@@ -31,6 +31,7 @@ CREATE TABLE "Events" (
     "eventDescription" TEXT,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "expiresIn" TIMESTAMP(3) NOT NULL,
+    "eventWatermark" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "ownerId" TEXT NOT NULL,

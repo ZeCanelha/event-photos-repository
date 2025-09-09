@@ -59,6 +59,8 @@ model Events {
     eventDescription String?
     active           Boolean  @default(true)
     expiresIn        DateTime
+    eventWatermark   String
+    metadata         Json
 
     createdAt DateTime @default(now())
     updatedAt DateTime @default(now())

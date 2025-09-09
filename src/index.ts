@@ -10,6 +10,7 @@ import { eventRouter } from "@routes/event";
 import { PrismaClient } from "@prisma/client";
 import { authRouter } from "@routes/auth";
 import { loadBootData } from "../prisma/seed";
+import { mediaRouter } from "@routes/media";
 
 // Load envirnoment variables
 dotenv.config();
@@ -38,6 +39,7 @@ const mainExec = async () => {
   // add routes to app
 
   app.use("/auth", authRouter(prisma));
+  app.use("/media", mediaRouter(prisma));
 
   app.listen(port, () => {
     console.log("App listening on port " + port);

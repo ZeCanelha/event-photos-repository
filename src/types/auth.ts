@@ -9,13 +9,13 @@ export const loginSchema = z.object({
   eventId: z.string().optional(),
 });
 
-export interface JWTClains {
+export interface JWTClaims {
   iat: number;
   exp: number;
   jti: string;
   role: Role;
-  eventUserId: string;
-  eventId: string;
+  eventUserId?: string;
+  eventId?: string;
   accountId: string;
 }
 
@@ -25,7 +25,7 @@ export interface IGetUserAuthInfoRequest<
   ReqBody = any,
   ReqQuery = ParsedQs
 > extends Request<P, ResBody, ReqBody, ReqQuery> {
-  user?: JWTClains;
+  user?: JWTClaims;
 }
 
 export type LoginRequestBody = z.infer<typeof loginSchema>;

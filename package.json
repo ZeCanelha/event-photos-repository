@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:api": "nodemon --watch src --exec tsx src/index.ts",
     "dev:resize": "nodemon --watch src --exec tsx src/workers/image.ts",
-    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:resize\""
+    "dev:upload": "nodemon --watch src --exec tsx src/workers/upload.ts",
+    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:resize\" \"npm run dev:upload\""
   },
   "author": "",
   "license": "ISC",

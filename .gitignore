@@ -9,6 +9,7 @@ prisma/*.ts
 /images
 /uploads
 /temp
+/watermarks
 
 # Node dependencies
 node_modules/

@@ -4,17 +4,6 @@ export const createEventSchema = z.object({
   eventName: z.string(),
   eventDescription: z.string().optional(),
   expiresIn: z.date(),
-  metadata: z.object({
-    watermarkPosition: z.enum([
-      "top",
-      "center",
-      "bottom",
-      "top-right",
-      "top-left",
-      "bottom-right",
-      "bottom-left",
-    ]),
-  }),
 });
 
 export type CreateEventSchema = z.infer<typeof createEventSchema>;

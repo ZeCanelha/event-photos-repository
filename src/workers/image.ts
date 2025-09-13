@@ -6,6 +6,7 @@ import path from "path";
 import { processImage } from "utils/image";
 import prisma from "utils/prisma";
 import { ProcessImageJobData } from "types/jobs";
+import { imageUploadQueue } from "queues/queue";
 
 console.log("Starting image processing worker");
 
@@ -34,20 +35,38 @@ const isEventWatermarkCached = async (eventId: string) => {
 };
 
 const resizeJob = async (job: Job) => {
-  console.log(`Started image processing for job ${job.id}`);
-
   const jobData = job.data as ProcessImageJobData;
+  console.log(`Started image processing for event ${jobData.eventId}`);
 
   if (!jobData.eventId) throw new Error(`Event Id not found in job data`);
 
   const watermarkPath = await isEventWatermarkCached(jobData.eventId);
 
-  const outputPath = path.resolve(process.cwd(), "temp", `${job.id}.webp`);
+  console.log(`Reading watermark from ${watermarkPath}`);
+
+  const filename = `${jobData.eventId}${jobData.jobNumber}.webp`;
+
+  const outputPath = path.resolve(
+    process.cwd(),
+    "temp",
+    `${jobData.eventId}`,
+    `${jobData.jobNumber}.webp`
+  );
+
+  console.log(`Writting to path ${outputPath}`);
+
   const watermarkedImage = await processImage(
     jobData.filePath,
     outputPath,
     watermarkPath
   );
+
+  console.log(`Watermarked image stored on ${watermarkedImage}`);
+
+  await imageUploadQueue.add("upload-image", {
+    eventId: jobData.eventId,
+    filePath: watermarkedImage,
+  });
 };
 
 const worker = new Worker(IMAGE_PROCESSING_QUEUE, resizeJob, {
@@ -57,12 +76,15 @@ const worker = new Worker(IMAGE_PROCESSING_QUEUE, resizeJob, {
 //TODO: Extend a job type
 
 worker.on("completed", async (job: Job, returnvalue: any) => {
-  console.log(`Job ${job.id} completed`);
+  const jobData = job.data as ProcessImageJobData;
 
   if (fs.existsSync(path.resolve(process.cwd(), job.data.filePath))) {
     console.log(`Cleaning reseources on: ${job.data.filePath}`);
-    await rm(job.data.filePath);
+    await rm(jobData.filePath);
   }
+  console.log(
+    `Finished job ${job.id} for event ${jobData.eventId} on a total of ${jobData?.jobNumber}/${jobData?.totalJobs}`
+  );
 });
 
 worker.on("progress", (job: Job, progress: JobProgress) => {

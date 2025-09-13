@@ -28,7 +28,11 @@ const mainExec = async () => {
   }
 
   // Enables CORS middleware
-  app.use(cors());
+  app.use(
+    cors({
+      origin: "*",
+    })
+  );
   // Looks at content type json and parses the request
   app.use(express.json());
   // Creates a simple logger
@@ -40,6 +44,7 @@ const mainExec = async () => {
 
   app.use("/auth", authRouter(prisma));
   app.use("/media", mediaRouter(prisma));
+  app.use("/events", eventRouter(prisma));
 
   app.listen(port, () => {
     console.log("App listening on port " + port);

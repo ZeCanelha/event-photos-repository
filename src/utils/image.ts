@@ -1,6 +1,15 @@
 import sharp from "sharp";
 import path from "path";
+import { mkdir } from "fs/promises";
 
+/**
+ *
+ * @param inputPath
+ * @param outputPath
+ * @param watermarkPath
+ * @param width
+ * @returns output path for the current image on disk
+ */
 export const processImage = async (
   inputPath: string,
   outputPath: string,
@@ -10,6 +19,11 @@ export const processImage = async (
   try {
     if (!watermarkPath)
       watermarkPath = path.resolve(process.cwd(), "images", "watermark.png");
+
+    // Ensure the file path exists
+
+    const dir = path.dirname(outputPath);
+    await mkdir(dir, { recursive: true });
 
     await sharp(inputPath)
       .resize({ width, withoutEnlargement: true }) // resize but don’t upscale

@@ -1,11 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import { NextFunction, Request, Response, Router } from "express";
-import { createJWT } from "utils/jwt/jwt";
+import { createJWTForAccount } from "utils/jwt/jwt";
 import { validateBody } from "middleware/validation";
 import { token } from "morgan";
 import { CreateUserRequestBody, createuserSchema } from "types/account";
 import { encryptData } from "utils/crypto/crypto";
-import { hashString } from "utils/crypto/hash";
+import { hashEmail } from "utils/crypto/hash";
 
 export const accountRouter = (prisma: PrismaClient) => {
   const router = Router();
@@ -20,7 +20,7 @@ export const accountRouter = (prisma: PrismaClient) => {
     ): Promise<any> => {
       try {
         const { email, inviteId, username, password, role } = req.body;
-        const hashedEmail = await hashString(email);
+        const hashedEmail = await hashEmail(email);
 
         const account = await prisma.account.findUnique({
           where: {
@@ -70,19 +70,17 @@ export const accountRouter = (prisma: PrismaClient) => {
 
         const eventUser = await prisma.eventUsers.create({
           data: {
-            role: role,
             eventId: invite.eventId,
             accountId: newAccount.id,
           },
         });
 
         return res.status(200).json({
-          token: createJWT(prisma, newAccount, event.id),
+          token: createJWTForAccount(role, newAccount),
           email: email,
           accountId: account.id,
           eventUserId: eventUser.id,
           event: event.id,
-          role: eventUser.role,
         });
       } catch (error: any) {
         next(error);

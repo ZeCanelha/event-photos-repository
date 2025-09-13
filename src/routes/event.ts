@@ -18,13 +18,14 @@ import multer from "multer";
 const uploadWatermark = multer({ dest: "watermarks/" });
 const uploads = multer({ dest: "uploads/" });
 
+//TODO: Criar as permissões depois
+
 export const eventRouter = (prisma: PrismaClient) => {
   const router = Router();
 
   router.post(
     "/",
     validateJWT,
-    permissions("Event", "Write"),
     async (
       req: IGetUserAuthInfoRequest<{}, {}, CreateEventSchema>,
       res: Response,
@@ -32,12 +33,12 @@ export const eventRouter = (prisma: PrismaClient) => {
     ): Promise<any> => {
       try {
         const user = req.user as JWTClaims;
-        const { eventName, expiresIn, eventDescription, metadata } = req.body;
+        const { eventName, expiresIn, eventDescription } = req.body;
 
         const event = await prisma.events.create({
           data: {
             eventName,
-            expiresIn,
+            expiresIn: new Date(expiresIn),
             eventDescription,
             ownerId: user.accountId,
             eventWatermark: "",
@@ -55,7 +56,6 @@ export const eventRouter = (prisma: PrismaClient) => {
   router.post(
     "/:id/watermark",
     validateJWT,
-    permissions("Event", "Write"),
     uploadWatermark.single("watermark"),
     async (
       req: IGetUserAuthInfoRequest<EventId, {}, EventMetadata>,
@@ -84,6 +84,7 @@ export const eventRouter = (prisma: PrismaClient) => {
           },
           data: {
             metadata,
+            eventWatermark: req.file?.path,
           },
         });
 
@@ -98,11 +99,23 @@ export const eventRouter = (prisma: PrismaClient) => {
   );
 
   router.post(
-    "/upload",
+    "/:id/upload",
     uploads.array("images", 10),
-
-    async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    async (
+      req: IGetUserAuthInfoRequest<EventId, {}, {}>,
+      res: Response,
+      next: NextFunction
+    ): Promise<any> => {
       try {
+        const eventId = req.params.id;
+        const event = await prisma.events.findUnique({
+          where: {
+            id: eventId,
+          },
+        });
+
+        if (!event) return res.status(404).json({ error: "Event not found" });
+
         if (!req.files)
           return res.status(400).json({ error: "No files found" });
 
@@ -114,6 +127,7 @@ export const eventRouter = (prisma: PrismaClient) => {
           // add each file to a job with metadata to then clean or do some work
 
           const job = await imageQueue.add("process-image", {
+            eventId,
             filePath: file.path,
             originalName: file.originalname,
             totalJobs: files.length,
@@ -135,7 +149,6 @@ export const eventRouter = (prisma: PrismaClient) => {
   router.get(
     "/",
     validateJWT,
-    permissions("Event", "Read"),
     async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
       try {
         const { accountId } = req.user as JWTClaims;
@@ -168,7 +181,6 @@ export const eventRouter = (prisma: PrismaClient) => {
   router.get(
     "/:id",
     validateJWT,
-    permissions("Event", "Read"),
     async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
       try {
         const { accountId } = req.user as JWTClaims;

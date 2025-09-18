@@ -1,9 +1,32 @@
 import { z } from "zod";
 
+const blendModes = [
+  "normal",
+  "multiply",
+  "screen",
+  "overlay",
+  "darken",
+  "lighten",
+  "color-dodge",
+  "color-burn",
+  "hard-light",
+  "soft-light",
+  "difference",
+  "exclusion",
+  "hue",
+  "saturation",
+  "color",
+  "luminosity",
+] as const;
+
+const positions = ["top", "center", "bottom"] as const;
+
 export const createEventSchema = z.object({
   eventName: z.string(),
   eventDescription: z.string().optional(),
   expiresIn: z.date(),
+  blendMode: z.enum(blendModes),
+  position: z.enum(positions),
 });
 
 export type CreateEventSchema = z.infer<typeof createEventSchema>;

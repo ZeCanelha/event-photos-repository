@@ -63,6 +63,21 @@ const resizeJob = async (job: Job) => {
 
   console.log(`Watermarked image stored on ${watermarkedImage}`);
 
+  // Update event job status on redis
+  await redis.publish(
+    `events:${jobData.eventId}:updates`,
+    JSON.stringify({
+      event: jobData.eventId,
+      jobsDone: jobData.jobNumber,
+      jobsTotal: jobData.totalJobs,
+      status:
+        jobData.jobNumber === jobData.totalJobs
+          ? "processing_completed"
+          : "processing",
+      worker: "image",
+    })
+  );
+
   await imageUploadQueue.add("upload-image", {
     eventId: jobData.eventId,
     filePath: watermarkedImage,
@@ -71,6 +86,7 @@ const resizeJob = async (job: Job) => {
 
 const worker = new Worker(IMAGE_PROCESSING_QUEUE, resizeJob, {
   connection: redis,
+  concurrency: 5,
 });
 
 //TODO: Extend a job type

@@ -26,6 +26,7 @@ export const eventRouter = (prisma: PrismaClient) => {
   router.post(
     "/",
     validateJWT,
+    uploadWatermark.single("watermark"),
     async (
       req: IGetUserAuthInfoRequest<{}, {}, CreateEventSchema>,
       res: Response,
@@ -33,7 +34,13 @@ export const eventRouter = (prisma: PrismaClient) => {
     ): Promise<any> => {
       try {
         const user = req.user as JWTClaims;
-        const { eventName, expiresIn, eventDescription } = req.body;
+        const { eventName, expiresIn, eventDescription, position, blendMode } =
+          req.body;
+
+        const file = req.file;
+
+        if (!file)
+          return res.status(400).json({ error: "Watermark file not found" });
 
         const event = await prisma.events.create({
           data: {
@@ -41,8 +48,11 @@ export const eventRouter = (prisma: PrismaClient) => {
             expiresIn: new Date(expiresIn),
             eventDescription,
             ownerId: user.accountId,
-            eventWatermark: "",
-            metadata: {},
+            eventWatermark: file.path,
+            metadata: {
+              position,
+              blendMode,
+            },
           },
         });
 

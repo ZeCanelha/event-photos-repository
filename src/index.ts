@@ -11,7 +11,7 @@ import { PrismaClient } from "@prisma/client";
 import { authRouter } from "@routes/auth";
 import { loadBootData } from "../prisma/seed";
 import { mediaRouter } from "@routes/media";
-
+import { initSocket } from "socket/socket";
 // Load envirnoment variables
 dotenv.config();
 
@@ -46,8 +46,10 @@ const mainExec = async () => {
   app.use("/media", mediaRouter(prisma));
   app.use("/events", eventRouter(prisma));
 
-  app.listen(port, () => {
-    console.log("App listening on port " + port);
+  // Change simple express server.listen to express server + socket server
+  const server = initSocket(app);
+  server.listen(port, () => {
+    console.log(`Starting express + socket server on port ${port}`);
   });
 };
 

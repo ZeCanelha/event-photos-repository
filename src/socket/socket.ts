@@ -13,6 +13,8 @@ export const initSocket = (app: Express) => {
     },
   });
 
+  // TODO: Add socket middleware for auth and more, like helmet and so on
+
   io.on("connection", (socket: Socket) => {
     console.log(`Client connected to socket server: ${socket.id}`);
 

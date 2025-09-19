@@ -131,8 +131,6 @@ export const eventRouter = (prisma: PrismaClient) => {
 
         const files = req.files as Express.Multer.File[];
 
-        let imageIndex = 0;
-
         for (const file of files) {
           // add each file to a job with metadata to then clean or do some work
 
@@ -141,10 +139,7 @@ export const eventRouter = (prisma: PrismaClient) => {
             filePath: file.path,
             originalName: file.originalname,
             totalJobs: files.length,
-            jobNumber: imageIndex,
           });
-
-          imageIndex++;
         }
         res.status(200).json({ message: "Files upload with success" });
       } catch (error: any) {

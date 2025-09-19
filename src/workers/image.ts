@@ -44,16 +44,12 @@ const resizeJob = async (job: Job) => {
 
   console.log(`Reading watermark from ${watermarkPath}`);
 
-  const filename = `${jobData.eventId}${jobData.jobNumber}.webp`;
-
   const outputPath = path.resolve(
     process.cwd(),
     "temp",
     `${jobData.eventId}`,
-    `${jobData.jobNumber}.webp`
+    `${new Date().toISOString()}.webp`
   );
-
-  console.log(`Writting to path ${outputPath}`);
 
   const watermarkedImage = await processImage(
     jobData.filePath,
@@ -61,19 +57,30 @@ const resizeJob = async (job: Job) => {
     watermarkPath
   );
 
-  console.log(`Watermarked image stored on ${watermarkedImage}`);
+  // increment progress on redis instead of jobNumber tracking. It will not be ordered because of concurrency set
+
+  const jobsDone = await redis.hincrby(
+    `events:${jobData.eventId}`,
+    "jobs_done",
+    1
+  );
+
+  // always keep totalJobs up to date
+  await redis.hset(
+    `events:${jobData.eventId}`,
+    "jobs_total",
+    jobData.totalJobs
+  );
 
   // Update event job status on redis
   await redis.publish(
     `events:${jobData.eventId}:updates`,
     JSON.stringify({
       event: jobData.eventId,
-      jobsDone: jobData.jobNumber,
+      jobsDone,
       jobsTotal: jobData.totalJobs,
       status:
-        jobData.jobNumber === jobData.totalJobs
-          ? "processing_completed"
-          : "processing",
+        jobsDone === jobData.totalJobs ? "processing_completed" : "processing",
       worker: "image",
     })
   );
@@ -98,9 +105,7 @@ worker.on("completed", async (job: Job, returnvalue: any) => {
     console.log(`Cleaning reseources on: ${job.data.filePath}`);
     await rm(jobData.filePath);
   }
-  console.log(
-    `Finished job ${job.id} for event ${jobData.eventId} on a total of ${jobData?.jobNumber}/${jobData?.totalJobs}`
-  );
+  console.log(`Finished job ${job.id} for event ${jobData.eventId}`);
 });
 
 worker.on("progress", (job: Job, progress: JobProgress) => {

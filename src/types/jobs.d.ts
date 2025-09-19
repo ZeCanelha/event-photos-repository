@@ -5,7 +5,6 @@ export interface ProcessImageJobData extends JobData {
   filePath: string;
   originalName: string;
   totalJobs: number;
-  jobNumber: number;
 }
 
 export interface UploadImageJobData extends JobData {

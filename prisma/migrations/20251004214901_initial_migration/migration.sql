@@ -32,6 +32,7 @@ CREATE TABLE "Events" (
     "active" BOOLEAN NOT NULL DEFAULT true,
     "expiresIn" TIMESTAMP(3) NOT NULL,
     "eventWatermark" TEXT NOT NULL,
+    "metadata" JSONB NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "ownerId" TEXT NOT NULL,
@@ -104,9 +105,23 @@ CREATE TABLE "RolePermissions" (
     "permission" "PermissionType" NOT NULL,
     "accountRoleId" TEXT NOT NULL,
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAr" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "RolePermissions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RefreshToken" (
+    "id" TEXT NOT NULL,
+    "tokenHash" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "revoked" BOOLEAN NOT NULL DEFAULT false,
+    "revokedAt" TIMESTAMP(3),
+    "replacedBy" TEXT,
+
+    CONSTRAINT "RefreshToken_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -123,6 +138,18 @@ CREATE UNIQUE INDEX "AccountRole_name_key" ON "AccountRole"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "RolePermissions_accountRoleId_context_permission_key" ON "RolePermissions"("accountRoleId", "context", "permission");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "RefreshToken_tokenHash_key" ON "RefreshToken"("tokenHash");
+
+-- CreateIndex
+CREATE INDEX "RefreshToken_accountId_idx" ON "RefreshToken"("accountId");
+
+-- CreateIndex
+CREATE INDEX "RefreshToken_tokenHash_idx" ON "RefreshToken"("tokenHash");
+
+-- CreateIndex
+CREATE INDEX "RefreshToken_expiresAt_idx" ON "RefreshToken"("expiresAt");
 
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "AccountRole"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -147,3 +174,6 @@ ALTER TABLE "AccountPermission" ADD CONSTRAINT "AccountPermission_accountId_fkey
 
 -- AddForeignKey
 ALTER TABLE "RolePermissions" ADD CONSTRAINT "RolePermissions_accountRoleId_fkey" FOREIGN KEY ("accountRoleId") REFERENCES "AccountRole"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;

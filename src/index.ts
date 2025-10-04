@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
-
+import cookieParser from "cookie-parser";
 // Routes
 
 import { eventRouter } from "@routes/event";
@@ -39,9 +39,10 @@ const mainExec = async () => {
   app.use(morgan("dev"));
   // Adds a layer of secure http headers
   app.use(helmet());
+  // Cookient parser middlware
+  app.use(cookieParser());
 
   // add routes to app
-
   app.use("/auth", authRouter(prisma));
   app.use("/media", mediaRouter(prisma));
   app.use("/events", eventRouter(prisma));

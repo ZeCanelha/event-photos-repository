@@ -48,6 +48,7 @@ model Account {
     events             Events[]
     eventUsers         EventUsers[]
     accountPermissions AccountPermission[]
+    refreshTokens      RefreshToken[]
 
     roleId      String?
     accountRole AccountRole? @relation(fields: [roleId], references: [id])
@@ -140,7 +141,25 @@ model RolePermissions {
     role          AccountRole @relation(fields: [accountRoleId], references: [id])
 
     createAt  DateTime @default(now())
-    updatedAr DateTime @default(now())
+    updatedAt DateTime @default(now())
 
     @@unique([accountRoleId, context, permission])
+}
+
+model RefreshToken {
+    id        String   @id @default(uuid())
+    tokenHash String   @unique
+    accountId String
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+
+    revoked    Boolean   @default(false)
+    revokedAt  DateTime?
+    replacedBy String?
+
+    account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+    @@index([accountId])
+    @@index([tokenHash])
+    @@index([expiresAt])
 }

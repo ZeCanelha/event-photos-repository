@@ -51,16 +51,15 @@ export const createJWTForEventuser = async (
   return token;
 };
 
-export const createJWTForAccount = (accountRole: string, account: Account) => {
-  if (!account || !accountRole) throw new Error("Invalid account or role");
+export const createJWTForAccount = (accountId: string) => {
+  if (!accountId) throw new Error("Invalid account or role");
 
   const claims = {
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 2 * (60 * 60), // 2 dias
     jti: crypto.randomUUID(),
 
-    role: accountRole,
-    accountId: account.id,
+    accountId: accountId,
   };
 
   const token = jwt.sign(claims, process.env.JWT_SECRET as Secret);
@@ -68,4 +67,66 @@ export const createJWTForAccount = (accountRole: string, account: Account) => {
   return token;
 };
 
-export const refreshJWT = () => {};
+export const createRefreshToken = async (
+  client: PrismaClient,
+  accountId: string
+) => {
+  const refreshToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+
+  await client.refreshToken.create({
+    data: {
+      tokenHash,
+      accountId,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  return refreshToken;
+};
+
+export const validateRefreshToken = async (
+  client: PrismaClient,
+  token: string
+) => {
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  const oldToken = await client.refreshToken.findUnique({
+    where: { tokenHash },
+    include: { account: true },
+  });
+
+  if (!oldToken || oldToken.expiresAt < new Date() || oldToken.revoked) {
+    throw new Error("Invalid token");
+  }
+
+  const newRefreshToken = crypto.randomBytes(32).toString("hex");
+  const newTokenHash = crypto
+    .createHash("sha256")
+    .update(newRefreshToken)
+    .digest("hex");
+
+  const newToken = await client.refreshToken.create({
+    data: {
+      tokenHash: newTokenHash,
+      accountId: oldToken.accountId,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  // Revoke old token
+
+  await client.refreshToken.update({
+    where: { id: oldToken.id },
+    data: {
+      revoked: true,
+      revokedAt: new Date(),
+      replacedBy: newToken.id,
+    },
+  });
+
+  return { newRefreshToken, accountId: oldToken.accountId };
+};

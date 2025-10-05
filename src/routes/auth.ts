@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router, Request, Response, NextFunction } from "express";
-import { LoginRequestBody } from "types/auth";
+import { LoginRequestBody, LoginResponse } from "types/auth";
 import { hashEmail, comparePasswords } from "utils/crypto/hash";
 import {
   createJWTForAccount,
@@ -66,7 +66,11 @@ export const authRouter = (prisma: PrismaClient) => {
 
   router.post(
     "/refresh",
-    async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    async (
+      req: Request,
+      res: Response<LoginResponse>,
+      next: NextFunction
+    ): Promise<any> => {
       try {
         const refreshToken = req.cookies.refreshToken;
 
@@ -79,16 +83,22 @@ export const authRouter = (prisma: PrismaClient) => {
           refreshToken
         );
 
-        const token = createJWTForAccount(accountId);
+        const { token, expireDuration } = createJWTForAccount(accountId);
 
-        const newToken = res.cookie("refreshToken", newRefreshToken, {
+        res.cookie("refreshToken", newRefreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        return res.status(200).json({ token, refreshToken: newToken });
+        return res
+          .status(200)
+          .json({
+            token,
+            refreshToken: newRefreshToken,
+            tokenExpireDuration: expireDuration,
+          });
       } catch (error) {
         res.clearCookie("refreshToken");
         next(error);

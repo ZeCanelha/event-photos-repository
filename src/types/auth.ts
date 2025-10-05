@@ -28,4 +28,21 @@ export interface IGetUserAuthInfoRequest<
   user?: JWTClaims;
 }
 
+export type Token = {
+  token: string;
+  refreshToken: string;
+  tokenExpireDuration: number;
+};
+
+export type CreateJWT = {
+  token: string;
+  expireDuration: number;
+};
+
+export type ErrorResponse = {
+  error?: string;
+};
+
+export type LoginResponse = Token | ErrorResponse;
+
 export type LoginRequestBody = z.infer<typeof loginSchema>;

@@ -1,6 +1,7 @@
 import { Account, PrismaClient } from "@prisma/client";
 import jwt, { Secret } from "jsonwebtoken";
 import crypto from "crypto";
+import { CreateJWT } from "types/auth";
 
 export const createJWTForEventuser = async (
   client: PrismaClient,
@@ -38,7 +39,7 @@ export const createJWTForEventuser = async (
 
   const claims = {
     iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 2 * (60 * 60), // 2 dias
+    exp: Math.floor(Date.now() / 1000) + 2 * (60 * 60), // 2 horas
     jti: crypto.randomUUID(),
 
     eventUserId: eventUser.id,
@@ -51,20 +52,21 @@ export const createJWTForEventuser = async (
   return token;
 };
 
-export const createJWTForAccount = (accountId: string) => {
+export const createJWTForAccount = (accountId: string): CreateJWT => {
   if (!accountId) throw new Error("Invalid account or role");
 
-  const claims = {
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 2 * (60 * 60), // 2 dias
-    jti: crypto.randomUUID(),
+  const expiresIn = Math.floor(Date.now() / 1000) * 5 * 60;
 
+  const claims = {
+    iat: Math.floor(Date.now() / 1000), // transformed to seconds
+    exp: expiresIn,
+    jti: crypto.randomUUID(),
     accountId: accountId,
   };
 
   const token = jwt.sign(claims, process.env.JWT_SECRET as Secret);
 
-  return token;
+  return { token, expireDuration: expiresIn * 1000 };
 };
 
 export const createRefreshToken = async (
